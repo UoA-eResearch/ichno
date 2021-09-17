@@ -6,7 +6,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+        integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
         integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
         crossorigin="" />
@@ -21,21 +23,25 @@
     <script src="//cdn.datatables.net/1.11.1/js/jquery.dataTables.min.js"></script>
     <link rel="stylesheet" href="//cdn.datatables.net/1.11.1/css/jquery.dataTables.min.css" />
     <style>
-        html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
         }
+
         #map {
             width: 100%;
             height: 40vh;
             margin: 0;
             padding: 0;
         }
+
         #datatable {
             width: 100%;
         }
+
         #title {
             position: absolute;
             top: 30;
@@ -54,12 +60,22 @@
             font-weight: normal;
             font-size: 1rem;
         }
+
+        th[aria-label^="Ichnogenera"],
+        th[aria-label^="Ichnoespecies"] {
+            font-style: italic;
+        }
+
+        select,
+        option {
+            max-width: 100px;
+        }
     </style>
 </head>
 
 <body>
     <h1 id="title">Deep-sea Ichno database</h1>
-    <div id="map"></div>	
+    <div id="map"></div>
     <table id="datatable" class="display"></table>
     <script>
         var map = L.map('map', {
@@ -97,14 +113,34 @@
                             .addTo(cluster);
                     }
                 }
-                var cols = Object.keys(results.data[0]).map(k => ({data: k, title: k}))
+                var cols = Object.keys(results.data[0]).map(k => ({ data: k, title: k }))
                 console.log(cols)
-                $('#datatable').DataTable( {
+                $('#datatable').DataTable({
                     data: results.data,
                     columns: cols,
                     scrollY: '40vh',
                     scrollCollapse: true,
-                    scrollX: true
+                    scrollX: true,
+                    initComplete: function () {
+                        this.api().columns().every(function () {
+                            var column = this;
+                            var select = $('<select onclick="event.stopPropagation();"><option value=""></option></select>')
+                                .appendTo($(column.header()))
+                                .on('change', function () {
+                                    var val = $.fn.dataTable.util.escapeRegex(
+                                        $(this).val()
+                                    );
+
+                                    column
+                                        .search(val ? '^' + val + '$' : '', true, false)
+                                        .draw();
+                                });
+
+                            column.data().unique().sort().each(function (d, j) {
+                                select.append('<option value="' + d + '">' + d + '</option>')
+                            });
+                        });
+                    }
                 });
             }
         });
